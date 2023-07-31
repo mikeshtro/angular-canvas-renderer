@@ -1,4 +1,23 @@
-import { Injectable, Renderer2, RendererStyleFlags2 } from '@angular/core';
+import {
+  inject,
+  Injectable,
+  Renderer2,
+  RendererFactory2,
+  RendererStyleFlags2,
+  RendererType2,
+} from '@angular/core';
+
+@Injectable()
+export class CanvasRendererFactory implements RendererFactory2 {
+  private readonly delegateFactory = inject(RendererFactory2, {
+    skipSelf: true,
+  });
+
+  createRenderer(hostElement: any, type: RendererType2 | null): Renderer2 {
+    const delegate = this.delegateFactory.createRenderer(hostElement, type);
+    return new CanvasRenderer(delegate);
+  }
+}
 
 export class CanvasRenderer implements Renderer2 {
   readonly #delegate: Renderer2;

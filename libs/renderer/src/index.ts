@@ -1,1 +1,1 @@
-export * from './lib/renderer.module';
+export * from './lib/canvas.component';
