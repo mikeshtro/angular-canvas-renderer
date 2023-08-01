@@ -60,6 +60,7 @@ export class CanvasRenderer implements Renderer2 {
   ): void {
     this.#delegate.insertBefore(parent, newChild, refChild, isMove);
   }
+
   removeChild(
     parent: any,
     oldChild: any,

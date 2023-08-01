@@ -1,8 +1,12 @@
-import { Component } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, Input, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'acr-renderer',
   standalone: true,
-  template: '<ng-content></ng-content>',
+  imports: [NgTemplateOutlet],
+  template: '<ng-container *ngTemplateOutlet="template ?? null" />',
 })
-export class RendererComponent {}
+export class RendererComponent {
+  @Input() template: TemplateRef<unknown> | null | undefined;
+}

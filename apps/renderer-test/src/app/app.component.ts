@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { CanvasComponent } from '@mikeshtro/renderer';
+import { CanvasComponent, CanvasContentDirective } from '@mikeshtro/renderer';
 
 @Component({
   selector: 'mikeshtro-root',
   standalone: true,
-  imports: [CanvasComponent],
-  template: '<acr-canvas></acr-canvas>',
+  imports: [CanvasComponent, CanvasContentDirective],
+  template: '<acr-canvas><div *acrCanvasContent>Something</div></acr-canvas>',
 })
 export class AppComponent {}
