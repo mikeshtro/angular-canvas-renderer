@@ -1,33 +1,28 @@
 import {
   Component,
-  ContentChild,
   createEnvironmentInjector,
   EnvironmentInjector,
   inject,
+  Input,
   RendererFactory2,
-  TemplateRef,
-  ViewChild,
+  Type,
   ViewContainerRef,
 } from '@angular/core';
 
-import { CanvasContentDirective } from './canvas-content.directive';
 import { CanvasRendererFactory } from './renderer';
 import { RendererComponent } from './renderer.component';
 
 @Component({
   selector: 'acr-canvas',
   standalone: true,
-  template: `<canvas #canvas></canvas>`,
+  template: '',
   providers: [],
 })
 export class CanvasComponent {
+  @Input({ required: true }) componentToRender!: Type<unknown>;
+
   private readonly injector = inject(EnvironmentInjector);
-
-  @ViewChild('canvas', { read: ViewContainerRef })
-  private readonly viewRef!: ViewContainerRef;
-
-  @ContentChild(CanvasContentDirective, { read: TemplateRef })
-  private readonly templateRef: TemplateRef<unknown> | null | undefined;
+  private readonly viewContainerRef = inject(ViewContainerRef);
 
   ngAfterViewInit(): void {
     requestAnimationFrame(() => {
@@ -43,11 +38,14 @@ export class CanvasComponent {
         this.injector
       );
 
-      const component = this.viewRef.createComponent(RendererComponent, {
-        environmentInjector: providers,
-      });
+      const component = this.viewContainerRef.createComponent(
+        RendererComponent,
+        {
+          environmentInjector: providers,
+        }
+      );
 
-      component.setInput('template', this.templateRef);
+      component.setInput('componentToRender', this.componentToRender);
     });
   }
 }
