@@ -1,4 +1,5 @@
 import {
+  ElementRef,
   inject,
   Injectable,
   Renderer2,
@@ -9,24 +10,76 @@ import {
 
 @Injectable()
 export class CanvasRendererFactory implements RendererFactory2 {
-  private readonly delegateFactory = inject(RendererFactory2, {
-    skipSelf: true,
-  });
+  readonly #delegateFactory = inject(RendererFactory2, { skipSelf: true });
+  readonly #canvas: ElementRef<HTMLCanvasElement>;
+
+  constructor(canvas: ElementRef<HTMLCanvasElement>) {
+    this.#canvas = canvas;
+  }
 
   createRenderer(hostElement: any, type: RendererType2 | null): Renderer2 {
-    const delegate = this.delegateFactory.createRenderer(hostElement, type);
-    return new CanvasRenderer(delegate);
+    const delegate = this.#delegateFactory.createRenderer(hostElement, type);
+    const context = this.#canvas.nativeElement.getContext('2d');
+    if (context == null) {
+      console.warn('Could not find context, using default renderer');
+      return delegate;
+    }
+
+    return new CanvasRenderer(delegate, context);
+  }
+}
+
+class Comment {
+  #value: string;
+
+  constructor(value: string) {
+    this.#value = value;
+  }
+
+  setValue(value: string): void {
+    this.#value = value;
+  }
+}
+
+class Element {
+  readonly #comments: Comment[] = [];
+  #path = new Path2D();
+
+  addComment(comment: Comment): void {
+    this.#comments.push(comment);
+  }
+
+  addPath2d(path: Path2D): void {
+    this.#path.addPath(path);
+  }
+
+  setPath2d(path: Path2D): void {
+    this.#path = path;
+  }
+
+  getPath2d(): Path2D {
+    return this.#path;
   }
 }
 
 export class CanvasRenderer implements Renderer2 {
   readonly #delegate: Renderer2;
+  readonly #context: CanvasRenderingContext2D;
 
-  constructor(delegate: Renderer2) {
+  readonly #svg = new Map<
+    Path2D,
+    { name: string; attributes: Record<string, string> }
+  >();
+
+  readonly #elements: Element[] = [];
+
+  constructor(delegate: Renderer2, context: CanvasRenderingContext2D) {
     this.#delegate = delegate;
+    this.#context = context;
   }
 
   get data(): { [key: string]: any } {
+    console.log({ type: 'data', data: this.#delegate.data });
     return this.#delegate.data;
   }
 
@@ -36,12 +89,21 @@ export class CanvasRenderer implements Renderer2 {
 
   createElement(name: string, namespace?: string | null | undefined) {
     console.log({ type: 'createElement', name, namespace });
-    return this.#delegate.createElement(name, namespace);
+
+    if (namespace === 'svg') {
+      const path = new Path2D();
+      this.#svg.set(path, { name, attributes: {} });
+      return path;
+    }
+
+    const element = new Element();
+    this.#elements.push(element);
+    return element;
   }
 
   createComment(value: string) {
     console.log({ type: 'createComment', value });
-    return this.#delegate.createComment(value);
+    return new Comment(value);
   }
 
   createText(value: string) {
@@ -52,7 +114,40 @@ export class CanvasRenderer implements Renderer2 {
   destroyNode = null;
 
   appendChild(parent: any, newChild: any): void {
-    console.log({ type: 'appendChild', newChild });
+    console.log({ type: 'appendChild', parent, newChild });
+
+    if (parent instanceof Element) {
+      if (newChild instanceof Comment) {
+        parent.addComment(newChild);
+        return;
+      }
+      if (newChild instanceof Path2D) {
+        parent.setPath2d(newChild);
+        return;
+      }
+    }
+
+    if (parent instanceof Path2D && newChild instanceof Path2D) {
+      const svg = this.#svg.get(newChild);
+
+      if (svg == null) {
+        throw Error('Could not append child it does not exist in local state');
+      }
+
+      if (svg.name === 'rect') {
+        const x = Number(svg.attributes['x']);
+        const y = Number(svg.attributes['y']);
+        const width = Number(svg.attributes['width']);
+        const height = Number(svg.attributes['height']);
+
+        console.log({ x, y, width, height });
+        newChild.rect(!isNaN(x) ? x : 0, !isNaN(y) ? y : 0, width, height);
+      }
+
+      parent.addPath(newChild);
+      return;
+    }
+
     this.#delegate.appendChild(parent, newChild);
   }
 
@@ -63,6 +158,12 @@ export class CanvasRenderer implements Renderer2 {
     isMove?: boolean | undefined
   ): void {
     console.log({ type: 'insertBefore', parent, newChild, refChild, isMove });
+
+    if (newChild instanceof Element) {
+      this.#context.stroke(newChild.getPath2d());
+      return;
+    }
+
     this.#delegate.insertBefore(parent, newChild, refChild, isMove);
   }
 
@@ -100,6 +201,16 @@ export class CanvasRenderer implements Renderer2 {
     namespace?: string | null | undefined
   ): void {
     console.log({ type: 'setAttribute', el, name, value, namespace });
+
+    if (el instanceof Path2D) {
+      const path = this.#svg.get(el);
+      if (path == null) {
+        throw Error(`Could not find element ${el} to set attribute ${name}`);
+      }
+      path.attributes[name] = value;
+      return;
+    }
+
     this.#delegate.setAttribute(el, name, value, namespace);
   }
 
@@ -148,6 +259,12 @@ export class CanvasRenderer implements Renderer2 {
 
   setValue(node: any, value: string): void {
     console.log({ type: 'setValue', node, value });
+
+    if (node instanceof Comment) {
+      node.setValue(value);
+      return;
+    }
+
     this.#delegate.setValue(node, value);
   }
 
