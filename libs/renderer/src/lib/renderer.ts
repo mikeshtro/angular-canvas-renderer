@@ -43,33 +43,79 @@ class Comment {
 
 class Element {
   readonly #comments: Comment[] = [];
-  #path = new Path2D();
+  readonly #paths: Path[] = [];
 
   addComment(comment: Comment): void {
     this.#comments.push(comment);
   }
 
-  addPath2d(path: Path2D): void {
-    this.#path.addPath(path);
+  addPath(path: Path): void {
+    this.#paths.push(path);
   }
 
-  setPath2d(path: Path2D): void {
+  getPaths(): Path[] {
+    return this.#paths;
+  }
+}
+
+class Path {
+  readonly #name: string;
+  readonly #path: Path2D;
+  readonly #attributes = new Map<string, string>();
+  readonly #paths: Path[] = [];
+
+  constructor(name: string, path: Path2D) {
+    this.#name = name;
     this.#path = path;
   }
 
-  getPath2d(): Path2D {
-    return this.#path;
+  getName(): string {
+    return this.#name;
+  }
+
+  getStroke(): string | undefined {
+    return this.#attributes.get('stroke');
+  }
+
+  getFill(): string | undefined {
+    return this.#attributes.get('fill');
+  }
+
+  setAttribute(name: string, value: string): void {
+    this.#attributes.set(name, value);
+  }
+
+  addPath(path: Path): void {
+    this.#paths.push(path);
+  }
+
+  getPaths(): Path[] {
+    return this.#paths;
+  }
+
+  getPath2D(): Path2D {
+    const result = new Path2D(this.#path);
+    if (this.#name === 'rect') {
+      const x = this.#getNumberAttribute('x');
+      const y = this.#getNumberAttribute('y');
+      const width = this.#getNumberAttribute('width');
+      const height = this.#getNumberAttribute('height');
+
+      result.rect(x ?? 0, y ?? 0, width ?? 0, height ?? 0);
+    }
+
+    return result;
+  }
+
+  #getNumberAttribute(name: string): number | undefined {
+    const attribute = Number(this.#attributes.get(name));
+    return !isNaN(attribute) ? attribute : undefined;
   }
 }
 
 export class CanvasRenderer implements Renderer2 {
   readonly #delegate: Renderer2;
   readonly #context: CanvasRenderingContext2D;
-
-  readonly #svg = new Map<
-    Path2D,
-    { name: string; attributes: Record<string, string> }
-  >();
 
   readonly #elements: Element[] = [];
 
@@ -91,9 +137,7 @@ export class CanvasRenderer implements Renderer2 {
     console.log({ type: 'createElement', name, namespace });
 
     if (namespace === 'svg') {
-      const path = new Path2D();
-      this.#svg.set(path, { name, attributes: {} });
-      return path;
+      return new Path(name, new Path2D());
     }
 
     const element = new Element();
@@ -121,29 +165,13 @@ export class CanvasRenderer implements Renderer2 {
         parent.addComment(newChild);
         return;
       }
-      if (newChild instanceof Path2D) {
-        parent.setPath2d(newChild);
+      if (newChild instanceof Path) {
+        parent.addPath(newChild);
         return;
       }
     }
 
-    if (parent instanceof Path2D && newChild instanceof Path2D) {
-      const svg = this.#svg.get(newChild);
-
-      if (svg == null) {
-        throw Error('Could not append child it does not exist in local state');
-      }
-
-      if (svg.name === 'rect') {
-        const x = Number(svg.attributes['x']);
-        const y = Number(svg.attributes['y']);
-        const width = Number(svg.attributes['width']);
-        const height = Number(svg.attributes['height']);
-
-        console.log({ x, y, width, height });
-        newChild.rect(!isNaN(x) ? x : 0, !isNaN(y) ? y : 0, width, height);
-      }
-
+    if (parent instanceof Path && newChild instanceof Path) {
       parent.addPath(newChild);
       return;
     }
@@ -160,11 +188,30 @@ export class CanvasRenderer implements Renderer2 {
     console.log({ type: 'insertBefore', parent, newChild, refChild, isMove });
 
     if (newChild instanceof Element) {
-      this.#context.stroke(newChild.getPath2d());
+      for (const path of newChild.getPaths()) {
+        this.#renderPath(path);
+      }
       return;
     }
 
     this.#delegate.insertBefore(parent, newChild, refChild, isMove);
+  }
+
+  #renderPath(path: Path): void {
+    const stroke = path.getStroke();
+    const fill = path.getFill();
+    const path2d = path.getPath2D();
+    if (fill != null) {
+      this.#context.fillStyle = fill;
+      this.#context.fill(path2d);
+    }
+    if (stroke != null) {
+      this.#context.strokeStyle = stroke;
+      this.#context.stroke(path2d);
+    }
+    for (const childPath of path.getPaths()) {
+      this.#renderPath(childPath);
+    }
   }
 
   removeChild(
@@ -202,12 +249,8 @@ export class CanvasRenderer implements Renderer2 {
   ): void {
     console.log({ type: 'setAttribute', el, name, value, namespace });
 
-    if (el instanceof Path2D) {
-      const path = this.#svg.get(el);
-      if (path == null) {
-        throw Error(`Could not find element ${el} to set attribute ${name}`);
-      }
-      path.attributes[name] = value;
+    if (el instanceof Path) {
+      el.setAttribute(name, value);
       return;
     }
 
