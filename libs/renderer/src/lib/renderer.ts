@@ -8,6 +8,11 @@ import {
   RendererType2,
 } from '@angular/core';
 
+import { Comment } from './comment';
+import { renderPath } from './context';
+import { Element } from './element';
+import { Path } from './path';
+
 @Injectable()
 export class CanvasRendererFactory implements RendererFactory2 {
   readonly #delegateFactory = inject(RendererFactory2, { skipSelf: true });
@@ -26,90 +31,6 @@ export class CanvasRendererFactory implements RendererFactory2 {
     }
 
     return new CanvasRenderer(delegate, context);
-  }
-}
-
-class Comment {
-  #value: string;
-
-  constructor(value: string) {
-    this.#value = value;
-  }
-
-  setValue(value: string): void {
-    this.#value = value;
-  }
-}
-
-class Element {
-  readonly #comments: Comment[] = [];
-  readonly #paths: Path[] = [];
-
-  addComment(comment: Comment): void {
-    this.#comments.push(comment);
-  }
-
-  addPath(path: Path): void {
-    this.#paths.push(path);
-  }
-
-  getPaths(): Path[] {
-    return this.#paths;
-  }
-}
-
-class Path {
-  readonly #name: string;
-  readonly #path: Path2D;
-  readonly #attributes = new Map<string, string>();
-  readonly #paths: Path[] = [];
-
-  constructor(name: string, path: Path2D) {
-    this.#name = name;
-    this.#path = path;
-  }
-
-  getName(): string {
-    return this.#name;
-  }
-
-  getStroke(): string | undefined {
-    return this.#attributes.get('stroke');
-  }
-
-  getFill(): string | undefined {
-    return this.#attributes.get('fill');
-  }
-
-  setAttribute(name: string, value: string): void {
-    this.#attributes.set(name, value);
-  }
-
-  addPath(path: Path): void {
-    this.#paths.push(path);
-  }
-
-  getPaths(): Path[] {
-    return this.#paths;
-  }
-
-  getPath2D(): Path2D {
-    const result = new Path2D(this.#path);
-    if (this.#name === 'rect') {
-      const x = this.#getNumberAttribute('x');
-      const y = this.#getNumberAttribute('y');
-      const width = this.#getNumberAttribute('width');
-      const height = this.#getNumberAttribute('height');
-
-      result.rect(x ?? 0, y ?? 0, width ?? 0, height ?? 0);
-    }
-
-    return result;
-  }
-
-  #getNumberAttribute(name: string): number | undefined {
-    const attribute = Number(this.#attributes.get(name));
-    return !isNaN(attribute) ? attribute : undefined;
   }
 }
 
@@ -137,7 +58,7 @@ export class CanvasRenderer implements Renderer2 {
     console.log({ type: 'createElement', name, namespace });
 
     if (namespace === 'svg') {
-      return new Path(name, new Path2D());
+      return new Path(name);
     }
 
     const element = new Element();
@@ -189,28 +110,10 @@ export class CanvasRenderer implements Renderer2 {
 
     if (newChild instanceof Element) {
       for (const path of newChild.getPaths()) {
-        this.#renderPath(path);
+        renderPath(path, this.#context);
       }
-      return;
-    }
-
-    this.#delegate.insertBefore(parent, newChild, refChild, isMove);
-  }
-
-  #renderPath(path: Path): void {
-    const stroke = path.getStroke();
-    const fill = path.getFill();
-    const path2d = path.getPath2D();
-    if (fill != null) {
-      this.#context.fillStyle = fill;
-      this.#context.fill(path2d);
-    }
-    if (stroke != null) {
-      this.#context.strokeStyle = stroke;
-      this.#context.stroke(path2d);
-    }
-    for (const childPath of path.getPaths()) {
-      this.#renderPath(childPath);
+    } else {
+      this.#delegate.insertBefore(parent, newChild, refChild, isMove);
     }
   }
 
