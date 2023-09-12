@@ -1,52 +1,52 @@
+import { NgComponentOutlet } from '@angular/common';
 import {
   Component,
   createEnvironmentInjector,
   ElementRef,
   EnvironmentInjector,
   inject,
+  Injector,
   Input,
   RendererFactory2,
   Type,
   ViewChild,
-  ViewContainerRef,
 } from '@angular/core';
 
 import { CanvasRendererFactory } from './renderer';
-import { RendererComponent } from './renderer.component';
 
 @Component({
   selector: 'acr-canvas',
   standalone: true,
-  template: '<canvas #canvas></canvas>',
+  imports: [NgComponentOutlet],
+  template: `
+    <canvas #canvas></canvas>
+    <ng-container
+      *ngComponentOutlet="
+        componentToRender;
+        injector: componentToRenderInjector
+      "
+    />
+  `,
 })
 export class CanvasComponent {
   @Input({ required: true }) componentToRender!: Type<unknown>;
 
   private readonly injector = inject(EnvironmentInjector);
-  private readonly viewContainerRef = inject(ViewContainerRef);
 
-  @ViewChild('canvas') private readonly canvas!: ElementRef<HTMLCanvasElement>;
+  protected componentToRenderInjector: Injector | undefined;
 
-  ngAfterViewInit(): void {
-    requestAnimationFrame(() => {
-      const providers = createEnvironmentInjector(
-        [
-          {
-            provide: RendererFactory2,
-            useFactory: () => new CanvasRendererFactory(this.canvas),
-          },
-        ],
-        this.injector
-      );
+  @ViewChild('canvas', { static: true })
+  private readonly canvas!: ElementRef<HTMLCanvasElement>;
 
-      const component = this.viewContainerRef.createComponent(
-        RendererComponent,
+  ngOnInit(): void {
+    this.componentToRenderInjector = createEnvironmentInjector(
+      [
         {
-          environmentInjector: providers,
-        }
-      );
-
-      component.setInput('componentToRender', this.componentToRender);
-    });
+          provide: RendererFactory2,
+          useFactory: () => new CanvasRendererFactory(this.canvas),
+        },
+      ],
+      this.injector
+    );
   }
 }
