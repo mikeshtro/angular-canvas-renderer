@@ -11,6 +11,16 @@ import { Component } from '@angular/core';
         stroke-width="3"
         stroke="rgb(0,0,0)"
       />
+    </svg>
+  `,
+  standalone: true,
+})
+export class TestComponent {}
+
+@Component({
+  selector: 'mikeshtro-test-2',
+  template: `
+    <svg width="400" height="110">
       <rect
         x="150"
         width="140"
@@ -23,4 +33,4 @@ import { Component } from '@angular/core';
   `,
   standalone: true,
 })
-export class TestComponent {}
+export class Test2Component {}

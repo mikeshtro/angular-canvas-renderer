@@ -7,3 +7,7 @@ export function coerceNumber(
   const numberValue = Number(value);
   return !isNaN(numberValue) ? numberValue : fallbackValue;
 }
+
+export function coerceArray<T>(value: T | T[]): T[] {
+  return ([] as T[]).concat(value);
+}

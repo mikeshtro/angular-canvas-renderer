@@ -1,4 +1,4 @@
-import { NgComponentOutlet } from '@angular/common';
+import { NgComponentOutlet, NgFor } from '@angular/common';
 import {
   Component,
   createEnvironmentInjector,
@@ -7,29 +7,34 @@ import {
   inject,
   Injector,
   Input,
+  OnInit,
   RendererFactory2,
   Type,
   ViewChild,
 } from '@angular/core';
 
+import { coerceArray } from './coercion';
 import { CanvasRendererFactory } from './renderer';
 
 @Component({
   selector: 'acr-canvas',
   standalone: true,
-  imports: [NgComponentOutlet],
+  imports: [NgComponentOutlet, NgFor],
   template: `
     <canvas #canvas></canvas>
-    <ng-container
-      *ngComponentOutlet="
-        componentToRender;
-        injector: componentToRenderInjector
-      "
-    />
+    <ng-template ngFor [ngForOf]="componentToRender" let-component>
+      <ng-container
+        *ngComponentOutlet="component; injector: componentToRenderInjector"
+      />
+    </ng-template>
   `,
 })
-export class CanvasComponent {
-  @Input({ required: true }) componentToRender!: Type<unknown>;
+export class CanvasComponent implements OnInit {
+  @Input({
+    required: true,
+    transform: (value: Type<unknown> | Type<unknown>[]) => coerceArray(value),
+  })
+  componentToRender!: Type<unknown>[];
 
   private readonly injector = inject(EnvironmentInjector);
 
