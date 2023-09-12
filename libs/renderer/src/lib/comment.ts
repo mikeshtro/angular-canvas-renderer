@@ -3,10 +3,10 @@
  * so the renderer does not fail
  */
 export class Comment {
-  #value: string;
+  private value: string;
 
   constructor(value: string) {
-    this.#value = value;
+    this.value = value;
   }
 
   /**
@@ -14,6 +14,6 @@ export class Comment {
    * @param value comment value
    */
   setValue(value: string): void {
-    this.#value = value;
+    this.value = value;
   }
 }

@@ -15,16 +15,18 @@ import { Path } from './path';
 
 @Injectable()
 export class CanvasRendererFactory implements RendererFactory2 {
-  readonly #delegateFactory = inject(RendererFactory2, { skipSelf: true });
-  readonly #canvas: ElementRef<HTMLCanvasElement>;
+  private readonly delegateFactory = inject(RendererFactory2, {
+    skipSelf: true,
+  });
+  private readonly canvas: ElementRef<HTMLCanvasElement>;
 
   constructor(canvas: ElementRef<HTMLCanvasElement>) {
-    this.#canvas = canvas;
+    this.canvas = canvas;
   }
 
   createRenderer(hostElement: any, type: RendererType2 | null): Renderer2 {
-    const delegate = this.#delegateFactory.createRenderer(hostElement, type);
-    const context = this.#canvas.nativeElement.getContext('2d');
+    const delegate = this.delegateFactory.createRenderer(hostElement, type);
+    const context = this.canvas.nativeElement.getContext('2d');
     if (context == null) {
       console.warn('Could not find context, using default renderer');
       return delegate;
@@ -35,23 +37,23 @@ export class CanvasRendererFactory implements RendererFactory2 {
 }
 
 export class CanvasRenderer implements Renderer2 {
-  readonly #delegate: Renderer2;
-  readonly #context: CanvasRenderingContext2D;
+  private readonly delegate: Renderer2;
+  private readonly context: CanvasRenderingContext2D;
 
-  readonly #elements: Element[] = [];
+  private readonly elements: Element[] = [];
 
   constructor(delegate: Renderer2, context: CanvasRenderingContext2D) {
-    this.#delegate = delegate;
-    this.#context = context;
+    this.delegate = delegate;
+    this.context = context;
   }
 
   get data(): { [key: string]: any } {
-    console.log({ type: 'data', data: this.#delegate.data });
-    return this.#delegate.data;
+    console.log({ type: 'data', data: this.delegate.data });
+    return this.delegate.data;
   }
 
   destroy(): void {
-    this.#delegate.destroy();
+    this.delegate.destroy();
   }
 
   createElement(name: string, namespace?: string | null | undefined) {
@@ -62,7 +64,7 @@ export class CanvasRenderer implements Renderer2 {
     }
 
     const element = new Element();
-    this.#elements.push(element);
+    this.elements.push(element);
     return element;
   }
 
@@ -73,7 +75,7 @@ export class CanvasRenderer implements Renderer2 {
 
   createText(value: string) {
     console.log({ type: 'createText', value });
-    return this.#delegate.createText(value);
+    return this.delegate.createText(value);
   }
 
   destroyNode = null;
@@ -97,7 +99,7 @@ export class CanvasRenderer implements Renderer2 {
       return;
     }
 
-    this.#delegate.appendChild(parent, newChild);
+    this.delegate.appendChild(parent, newChild);
   }
 
   insertBefore(
@@ -110,10 +112,10 @@ export class CanvasRenderer implements Renderer2 {
 
     if (newChild instanceof Element) {
       for (const path of newChild.getPaths()) {
-        renderPath(path, this.#context);
+        renderPath(path, this.context);
       }
     } else {
-      this.#delegate.insertBefore(parent, newChild, refChild, isMove);
+      this.delegate.insertBefore(parent, newChild, refChild, isMove);
     }
   }
 
@@ -123,7 +125,7 @@ export class CanvasRenderer implements Renderer2 {
     isHostElement?: boolean | undefined
   ): void {
     console.log({ type: 'removeChild', parent, oldChild, isHostElement });
-    this.#delegate.removeChild(parent, oldChild, isHostElement);
+    this.delegate.removeChild(parent, oldChild, isHostElement);
   }
 
   selectRootElement(
@@ -131,17 +133,17 @@ export class CanvasRenderer implements Renderer2 {
     preserveContent?: boolean | undefined
   ) {
     console.log({ type: 'selectRootElement', selectorOrNode, preserveContent });
-    return this.#delegate.selectRootElement(selectorOrNode, preserveContent);
+    return this.delegate.selectRootElement(selectorOrNode, preserveContent);
   }
 
   parentNode(node: any) {
     console.log({ type: 'parentNode', node });
-    return this.#delegate.parentNode(node);
+    return this.delegate.parentNode(node);
   }
 
   nextSibling(node: any) {
     console.log({ type: 'nextSibling', node });
-    return this.#delegate.nextSibling(node);
+    return this.delegate.nextSibling(node);
   }
 
   setAttribute(
@@ -157,7 +159,7 @@ export class CanvasRenderer implements Renderer2 {
       return;
     }
 
-    this.#delegate.setAttribute(el, name, value, namespace);
+    this.delegate.setAttribute(el, name, value, namespace);
   }
 
   removeAttribute(
@@ -166,17 +168,17 @@ export class CanvasRenderer implements Renderer2 {
     namespace?: string | null | undefined
   ): void {
     console.log({ type: 'removeAttribute', el, name, namespace });
-    this.#delegate.removeAttribute(el, name, namespace);
+    this.delegate.removeAttribute(el, name, namespace);
   }
 
   addClass(el: any, name: string): void {
     console.log({ type: 'addClass', el, name });
-    this.#delegate.addClass(el, name);
+    this.delegate.addClass(el, name);
   }
 
   removeClass(el: any, name: string): void {
     console.log({ type: 'removeClass', el, name });
-    this.#delegate.removeClass(el, name);
+    this.delegate.removeClass(el, name);
   }
 
   setStyle(
@@ -186,7 +188,7 @@ export class CanvasRenderer implements Renderer2 {
     flags?: RendererStyleFlags2 | undefined
   ): void {
     console.log({ type: 'setStyle', el, style, value, flags });
-    this.#delegate.setStyle(el, style, value, flags);
+    this.delegate.setStyle(el, style, value, flags);
   }
 
   removeStyle(
@@ -195,12 +197,12 @@ export class CanvasRenderer implements Renderer2 {
     flags?: RendererStyleFlags2 | undefined
   ): void {
     console.log({ type: 'removeStyle', el, style, flags });
-    this.#delegate.removeStyle(el, style, flags);
+    this.delegate.removeStyle(el, style, flags);
   }
 
   setProperty(el: any, name: string, value: any): void {
     console.log({ type: 'setProperty', el, name });
-    this.#delegate.setProperty(el, name, value);
+    this.delegate.setProperty(el, name, value);
   }
 
   setValue(node: any, value: string): void {
@@ -211,7 +213,7 @@ export class CanvasRenderer implements Renderer2 {
       return;
     }
 
-    this.#delegate.setValue(node, value);
+    this.delegate.setValue(node, value);
   }
 
   listen(
@@ -220,6 +222,6 @@ export class CanvasRenderer implements Renderer2 {
     callback: (event: any) => boolean | void
   ): () => void {
     console.log({ type: 'listen', target, eventName });
-    return this.#delegate.listen(target, eventName, callback);
+    return this.delegate.listen(target, eventName, callback);
   }
 }
