@@ -59,14 +59,18 @@ export class Path {
   getPath2D(): Path2D {
     const result = new Path2D();
     if (this.#name === 'rect') {
-      const x = coerceNumber('x', 0);
-      const y = coerceNumber('y', 0);
-      const width = coerceNumber('width', 0);
-      const height = coerceNumber('height', 0);
+      const x = this.#coerceNumberAttribute('x');
+      const y = this.#coerceNumberAttribute('y');
+      const width = this.#coerceNumberAttribute('width');
+      const height = this.#coerceNumberAttribute('height');
 
       result.rect(x, y, width, height);
     }
 
     return result;
+  }
+
+  #coerceNumberAttribute(name: string): number {
+    return coerceNumber(this.#attributes.get(name) ?? '0', 0);
   }
 }
