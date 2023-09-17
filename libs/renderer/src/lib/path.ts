@@ -1,16 +1,19 @@
 import { coerceNumber } from './coercion';
+import { Rectangle } from './rectangle';
 
 /**
  * Path object represents path to be rendered it can contain
  * child paths
  */
 export class Path {
+  private readonly delegate: Element;
   private readonly name: string;
   private readonly attributes = new Map<string, string>();
   private readonly paths: Path[] = [];
 
-  constructor(name: string) {
+  constructor(name: string, delegate: Element) {
     this.name = name;
+    this.delegate = delegate;
   }
 
   /**
@@ -70,7 +73,50 @@ export class Path {
     return result;
   }
 
+  addEventListener<K extends keyof ElementEventMap>(
+    type: K,
+    listener: (event: any) => boolean | void,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    function callback(event: any, rectangle: Rectangle | undefined): void {
+      if (rectangle != null && 'offsetX' in event && 'offsetY' in event) {
+        const offsetX = event.offsetX;
+        const offsetY = event.offsetY;
+        if (
+          rectangle.x < offsetX &&
+          offsetX < rectangle.x + rectangle.width &&
+          rectangle.y < offsetY &&
+          offsetY < rectangle.y + rectangle.height
+        ) {
+          console.log(rectangle.x, offsetX, rectangle.width);
+          listener(event);
+        }
+      } else {
+        console.log({ event, rectangle });
+        listener(event);
+      }
+    }
+
+    this.delegate.addEventListener(
+      type,
+      (ev) => callback(ev, this.getPathRectangle()),
+      options
+    );
+  }
+
   private coerceNumberAttribute(name: string): number {
-    return coerceNumber(this.attributes.get(name) ?? '0', 0);
+    return coerceNumber(this.attributes.get(name), 0);
+  }
+
+  private getPathRectangle(): Rectangle | undefined {
+    const x = coerceNumber(this.attributes.get('x'), 0);
+    const y = coerceNumber(this.attributes.get('y'), 0);
+    const width = coerceNumber(this.attributes.get('width'));
+    const height = coerceNumber(this.attributes.get('height'));
+    if (width == null || height == null) {
+      return undefined;
+    }
+
+    return { x, y, width, height };
   }
 }

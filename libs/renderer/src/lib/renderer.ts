@@ -32,19 +32,23 @@ export class CanvasRendererFactory implements RendererFactory2 {
       return delegate;
     }
 
-    return new CanvasRenderer(delegate, context);
+    return new CanvasRenderer(delegate, context, this.canvas.nativeElement);
   }
 }
 
 export class CanvasRenderer implements Renderer2 {
   private readonly delegate: Renderer2;
   private readonly context: CanvasRenderingContext2D;
+  private readonly hostElement: HTMLElement;
 
-  private readonly elements: Element[] = [];
-
-  constructor(delegate: Renderer2, context: CanvasRenderingContext2D) {
+  constructor(
+    delegate: Renderer2,
+    context: CanvasRenderingContext2D,
+    hostElement: HTMLElement
+  ) {
     this.delegate = delegate;
     this.context = context;
+    this.hostElement = hostElement;
   }
 
   get data(): { [key: string]: any } {
@@ -60,12 +64,10 @@ export class CanvasRenderer implements Renderer2 {
     console.log({ type: 'createElement', name, namespace });
 
     if (namespace === 'svg') {
-      return new Path(name);
+      return new Path(name, this.hostElement);
     }
 
-    const element = new Element();
-    this.elements.push(element);
-    return element;
+    return new Element();
   }
 
   createComment(value: string) {

@@ -1,7 +1,10 @@
-export function coerceNumber(value: string): number | undefined;
-export function coerceNumber(value: string, fallbackValue: number): number;
+export function coerceNumber(value: string | undefined): number | undefined;
 export function coerceNumber(
-  value: string,
+  value: string | undefined,
+  fallbackValue: number
+): number;
+export function coerceNumber(
+  value: string | undefined,
   fallbackValue?: number
 ): number | undefined {
   const numberValue = Number(value);

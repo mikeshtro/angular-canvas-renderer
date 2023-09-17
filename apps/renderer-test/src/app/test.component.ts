@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'mikeshtro-test',
   template: `
-    <svg width="400" height="110">
+    <svg width="400" height="110" (click)="onClick($event)">
       <rect
         width="140"
         height="100"
@@ -15,7 +15,11 @@ import { Component } from '@angular/core';
   `,
   standalone: true,
 })
-export class TestComponent {}
+export class TestComponent {
+  protected onClick(event: any): void {
+    console.log('event 1');
+  }
+}
 
 @Component({
   selector: 'mikeshtro-test-2',
@@ -28,9 +32,14 @@ export class TestComponent {}
         fill="rgb(255,0,0)"
         stroke-width="3"
         stroke="rgb(0,0,0)"
+        (click)="onClick($event)"
       />
     </svg>
   `,
   standalone: true,
 })
-export class Test2Component {}
+export class Test2Component {
+  protected onClick(event: any): void {
+    console.log('event 2');
+  }
+}
