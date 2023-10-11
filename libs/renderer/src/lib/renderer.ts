@@ -87,6 +87,10 @@ export class CanvasRenderer implements Renderer2 {
         parent.addPath(newChild);
         return;
       }
+      if (newChild instanceof Element) {
+        parent.addElement(newChild);
+        return;
+      }
     }
 
     if (parent instanceof Path && newChild instanceof Path) {

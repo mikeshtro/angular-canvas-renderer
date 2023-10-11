@@ -8,6 +8,7 @@ import { Path } from './path';
 export class Element {
   private readonly comments: Comment[] = [];
   private readonly paths: Path[] = [];
+  private readonly elements: Element[] = [];
 
   /**
    * Adds comment to the list of comments
@@ -26,9 +27,19 @@ export class Element {
   }
 
   /**
+   * Adds element to the list of elements
+   * @param element element to be added
+   */
+  addElement(element: Element): void {
+    this.elements.push(element);
+  }
+
+  /**
    * @returns list of child paths
    */
   getPaths(): Path[] {
-    return this.paths;
+    return this.paths.concat(
+      this.elements.map((element) => element.getPaths()).flat()
+    );
   }
 }

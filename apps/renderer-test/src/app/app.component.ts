@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CanvasComponent } from '@mikeshtro/renderer';
 
-import { Test2Component, TestComponent } from './test.component';
+import { Test3Component } from './test.component';
 
 @Component({
   selector: 'mikeshtro-root',
@@ -10,5 +10,5 @@ import { Test2Component, TestComponent } from './test.component';
   template: '<acr-canvas [componentToRender]="componentToRender"></acr-canvas>',
 })
 export class AppComponent {
-  protected componentToRender = [TestComponent, Test2Component];
+  protected componentToRender = [Test3Component];
 }
