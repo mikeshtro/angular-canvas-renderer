@@ -1,5 +1,7 @@
 import { coerceNumber } from './coercion';
 import { Rectangle } from './rectangle';
+import { RectangleAttributes } from './rectangle-attributes';
+import { rectangleToPath } from './svg';
 
 /**
  * Path object represents path to be rendered it can contain
@@ -62,12 +64,13 @@ export class Path {
   getPath2D(): Path2D {
     const result = new Path2D();
     if (this.name === 'rect') {
-      const x = this.coerceNumberAttribute('x');
-      const y = this.coerceNumberAttribute('y');
-      const width = this.coerceNumberAttribute('width');
-      const height = this.coerceNumberAttribute('height');
-
-      result.rect(x, y, width, height);
+      const attributes: RectangleAttributes = {
+        x: this.attributes.get('x'),
+        y: this.attributes.get('y'),
+        width: this.attributes.get('width'),
+        height: this.attributes.get('height'),
+      };
+      return rectangleToPath(attributes);
     }
 
     return result;
@@ -88,11 +91,9 @@ export class Path {
           rectangle.y < offsetY &&
           offsetY < rectangle.y + rectangle.height
         ) {
-          console.log(rectangle.x, offsetX, rectangle.width);
           listener(event);
         }
       } else {
-        console.log({ event, rectangle });
         listener(event);
       }
     }
@@ -102,10 +103,6 @@ export class Path {
       (ev) => callback(ev, this.getPathRectangle()),
       options
     );
-  }
-
-  private coerceNumberAttribute(name: string): number {
-    return coerceNumber(this.attributes.get(name), 0);
   }
 
   private getPathRectangle(): Rectangle | undefined {
