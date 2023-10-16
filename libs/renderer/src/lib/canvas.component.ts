@@ -21,7 +21,7 @@ import { CanvasRendererFactory } from './renderer';
   standalone: true,
   imports: [NgComponentOutlet, NgFor],
   template: `
-    <canvas #canvas></canvas>
+    <canvas #canvas width="800" height="110"></canvas>
     <ng-template ngFor [ngForOf]="componentToRender" let-component>
       <ng-container
         *ngComponentOutlet="component; injector: componentToRenderInjector"
@@ -37,6 +37,7 @@ export class CanvasComponent implements OnInit {
   componentToRender!: Type<unknown>[];
 
   private readonly injector = inject(EnvironmentInjector);
+  private readonly elementRef = inject(ElementRef);
 
   protected componentToRenderInjector: Injector | undefined;
 
@@ -48,7 +49,8 @@ export class CanvasComponent implements OnInit {
       [
         {
           provide: RendererFactory2,
-          useFactory: () => new CanvasRendererFactory(this.canvas),
+          useFactory: () =>
+            new CanvasRendererFactory(this.canvas, this.elementRef),
         },
       ],
       this.injector

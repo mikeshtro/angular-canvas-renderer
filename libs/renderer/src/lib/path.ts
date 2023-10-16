@@ -1,6 +1,9 @@
+import { Path2DBuilder } from '@mikeshtro/svg';
+
 import { coerceNumber } from './coercion';
 import { Rectangle } from './rectangle';
 import { RectangleAttributes } from './rectangle-attributes';
+import { Size } from './size';
 import { rectangleToPath } from './svg';
 
 /**
@@ -60,9 +63,12 @@ export class Path {
    * Builds `Path2D` object to be rendered from its name
    * and given attributes. This path does not include stroke
    * and fill so it can be defined for each child separately
+   * @param pathBuilder builder used to build the path
    */
-  getPath2D(): Path2D {
-    const result = new Path2D();
+  getPath2D(pathBuilder: Path2DBuilder): Path2D {
+    if (this.name === 'svg') {
+      return new Path2D();
+    }
     if (this.name === 'rect') {
       const attributes: RectangleAttributes = {
         x: this.attributes.get('x'),
@@ -70,12 +76,18 @@ export class Path {
         width: this.attributes.get('width'),
         height: this.attributes.get('height'),
       };
-      return rectangleToPath(attributes);
+      return rectangleToPath(attributes, pathBuilder);
     }
 
-    return result;
+    throw Error(`Element ${this.name} is not supported yet`);
   }
 
+  /**
+   * A variant of DOM `addEventListener` function that adds event listener to a path object
+   * @param type type of event
+   * @param listener callback function called when event is fired
+   * @param options event listener options
+   */
   addEventListener<K extends keyof ElementEventMap>(
     type: K,
     listener: (event: any) => boolean | void,
@@ -105,7 +117,21 @@ export class Path {
     );
   }
 
-  private getPathRectangle(): Rectangle | undefined {
+  /**
+   * Returns the path size
+   * @returns size of the path
+   */
+  getSize(): Size {
+    const width = coerceNumber(this.attributes.get('width'), 0);
+    const height = coerceNumber(this.attributes.get('height'), 0);
+    return { width, height };
+  }
+
+  /**
+   * Returns rectangle wrapping the path
+   * @returns path rectangle or undefined when the size is not defied
+   */
+  getPathRectangle(): Rectangle | undefined {
     const x = coerceNumber(this.attributes.get('x'), 0);
     const y = coerceNumber(this.attributes.get('y'), 0);
     const width = coerceNumber(this.attributes.get('width'));

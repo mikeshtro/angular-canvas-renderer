@@ -1,5 +1,6 @@
 import { Comment } from './comment';
 import { Path } from './path';
+import { Size } from './size';
 
 /**
  * Class for storing elements. Element contains its child svgs
@@ -32,6 +33,27 @@ export class Element {
    */
   addElement(element: Element): void {
     this.elements.push(element);
+  }
+
+  /**
+   * Returns element size build from its child paths
+   * @returns size of the element
+   */
+  getSize(): Size {
+    let width = 0;
+    let height = 0;
+
+    for (const path of this.paths) {
+      const pathBB = path.getPathRectangle();
+      if (pathBB != null && pathBB.x + pathBB.width > width) {
+        width = pathBB.x + pathBB.width;
+      }
+      if (pathBB != null && pathBB.y + pathBB.height > height) {
+        height = pathBB.y + pathBB.height;
+      }
+    }
+
+    return { width, height };
   }
 
   /**

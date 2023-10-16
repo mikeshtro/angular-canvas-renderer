@@ -12,43 +12,47 @@ import { Comment } from './comment';
 import { renderPath } from './context';
 import { Element } from './element';
 import { Path } from './path';
+import { RootElement } from './root-element';
 
 @Injectable()
 export class CanvasRendererFactory implements RendererFactory2 {
   private readonly delegateFactory = inject(RendererFactory2, {
     skipSelf: true,
   });
-  private readonly canvas: ElementRef<HTMLCanvasElement>;
+  private readonly context: CanvasRenderingContext2D | null;
+  private readonly rootElement: RootElement | undefined;
 
-  constructor(canvas: ElementRef<HTMLCanvasElement>) {
-    this.canvas = canvas;
+  constructor(
+    canvas: ElementRef<HTMLCanvasElement>,
+    rootElement: ElementRef<HTMLElement>
+  ) {
+    this.context = canvas.nativeElement.getContext('2d');
+    if (this.context != null) {
+      this.rootElement = new RootElement(
+        rootElement.nativeElement,
+        this.context
+      );
+    }
   }
 
   createRenderer(hostElement: any, type: RendererType2 | null): Renderer2 {
     const delegate = this.delegateFactory.createRenderer(hostElement, type);
-    const context = this.canvas.nativeElement.getContext('2d');
-    if (context == null) {
+    if (this.rootElement == null) {
       console.warn('Could not find context, using default renderer');
       return delegate;
     }
 
-    return new CanvasRenderer(delegate, context, this.canvas.nativeElement);
+    return new CanvasRenderer(delegate, this.rootElement);
   }
 }
 
 export class CanvasRenderer implements Renderer2 {
   private readonly delegate: Renderer2;
-  private readonly context: CanvasRenderingContext2D;
-  private readonly hostElement: HTMLElement;
+  private readonly rootElement: RootElement;
 
-  constructor(
-    delegate: Renderer2,
-    context: CanvasRenderingContext2D,
-    hostElement: HTMLElement
-  ) {
+  constructor(delegate: Renderer2, rootElement: RootElement) {
     this.delegate = delegate;
-    this.context = context;
-    this.hostElement = hostElement;
+    this.rootElement = rootElement;
   }
 
   get data(): { [key: string]: any } {
@@ -61,7 +65,7 @@ export class CanvasRenderer implements Renderer2 {
 
   createElement(name: string, namespace?: string | null | undefined) {
     if (namespace === 'svg') {
-      return new Path(name, this.hostElement);
+      return new Path(name, this.rootElement.getHtmlElement());
     }
 
     return new Element();
@@ -107,10 +111,11 @@ export class CanvasRenderer implements Renderer2 {
     refChild: any,
     isMove?: boolean | undefined
   ): void {
-    if (newChild instanceof Element) {
-      for (const path of newChild.getPaths()) {
-        renderPath(path, this.context);
-      }
+    if (
+      parent === this.rootElement.getHtmlElement() &&
+      newChild instanceof Element
+    ) {
+      this.rootElement.insertBefore(newChild, refChild);
     } else {
       this.delegate.insertBefore(parent, newChild, refChild, isMove);
     }
