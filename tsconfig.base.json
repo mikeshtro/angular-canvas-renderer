@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@mikeshtro/renderer": ["libs/renderer/src/index.ts"]
+      "@mikeshtro/renderer": ["libs/renderer/src/index.ts"],
+      "@mikeshtro/svg": ["libs/svg/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
