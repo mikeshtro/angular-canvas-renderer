@@ -1,23 +1,35 @@
-import { Path2DBuilder } from '@mikeshtro/svg';
+import {
+  Path2DBuilder,
+  RectangleAttributes,
+  rectangleToPath,
+} from '@mikeshtro/svg';
 
 import { coerceNumber } from './coercion';
 import { Rectangle } from './rectangle';
-import { RectangleAttributes } from './rectangle-attributes';
 import { Size } from './size';
-import { rectangleToPath } from './svg';
+
+export function createPath(name: string, delegate: Element): Path {
+  if (name === 'svg') {
+    return new SvgPath(delegate);
+  }
+
+  if (name === 'rect') {
+    return new RectanglePath(delegate);
+  }
+
+  throw Error(`Element ${name} is not supported yet`);
+}
 
 /**
  * Path object represents path to be rendered it can contain
  * child paths
  */
-export class Path {
+export abstract class Path {
   private readonly delegate: Element;
-  private readonly name: string;
   private readonly attributes = new Map<string, string>();
   private readonly paths: Path[] = [];
 
-  constructor(name: string, delegate: Element) {
-    this.name = name;
+  constructor(delegate: Element) {
     this.delegate = delegate;
   }
 
@@ -65,22 +77,7 @@ export class Path {
    * and fill so it can be defined for each child separately
    * @param pathBuilder builder used to build the path
    */
-  getPath2D(pathBuilder: Path2DBuilder): Path2D {
-    if (this.name === 'svg') {
-      return new Path2D();
-    }
-    if (this.name === 'rect') {
-      const attributes: RectangleAttributes = {
-        x: this.attributes.get('x'),
-        y: this.attributes.get('y'),
-        width: this.attributes.get('width'),
-        height: this.attributes.get('height'),
-      };
-      return rectangleToPath(attributes, pathBuilder);
-    }
-
-    throw Error(`Element ${this.name} is not supported yet`);
-  }
+  abstract getPath2D(pathBuilder: Path2DBuilder): Path2D;
 
   /**
    * A variant of DOM `addEventListener` function that adds event listener to a path object
@@ -122,8 +119,8 @@ export class Path {
    * @returns size of the path
    */
   getSize(): Size {
-    const width = coerceNumber(this.attributes.get('width'), 0);
-    const height = coerceNumber(this.attributes.get('height'), 0);
+    const width = this.getNumberAttribute('width', 0);
+    const height = this.getNumberAttribute('height', 0);
     return { width, height };
   }
 
@@ -132,14 +129,46 @@ export class Path {
    * @returns path rectangle or undefined when the size is not defied
    */
   getPathRectangle(): Rectangle | undefined {
-    const x = coerceNumber(this.attributes.get('x'), 0);
-    const y = coerceNumber(this.attributes.get('y'), 0);
-    const width = coerceNumber(this.attributes.get('width'));
-    const height = coerceNumber(this.attributes.get('height'));
+    const x = this.getNumberAttribute('x', 0);
+    const y = this.getNumberAttribute('y', 0);
+    const width = this.getNumberAttribute('width');
+    const height = this.getNumberAttribute('height');
     if (width == null || height == null) {
       return undefined;
     }
 
     return { x, y, width, height };
+  }
+
+  protected getNumberAttribute(name: string): number | undefined;
+  protected getNumberAttribute(name: string, defaultValue: number): number;
+  protected getNumberAttribute(
+    name: string,
+    defaultValue?: number
+  ): number | undefined {
+    const attribute = this.attributes.get(name);
+    if (defaultValue != null) {
+      return coerceNumber(attribute, defaultValue);
+    } else {
+      return coerceNumber(attribute);
+    }
+  }
+}
+
+export class SvgPath extends Path {
+  override getPath2D(): Path2D {
+    return new Path2D();
+  }
+}
+
+export class RectanglePath extends Path {
+  override getPath2D(pathBuilder: Path2DBuilder): Path2D {
+    const attributes: RectangleAttributes = {
+      x: this.getNumberAttribute('x', 0),
+      y: this.getNumberAttribute('y', 0),
+      width: this.getNumberAttribute('width', 0),
+      height: this.getNumberAttribute('height', 0),
+    };
+    return rectangleToPath(attributes, pathBuilder);
   }
 }

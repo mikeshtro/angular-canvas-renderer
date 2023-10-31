@@ -11,7 +11,7 @@ import {
 import { Comment } from './comment';
 import { renderPath } from './context';
 import { Element } from './element';
-import { Path } from './path';
+import { createPath, Path } from './path';
 import { RootElement } from './root-element';
 
 @Injectable()
@@ -65,7 +65,7 @@ export class CanvasRenderer implements Renderer2 {
 
   createElement(name: string, namespace?: string | null | undefined) {
     if (namespace === 'svg') {
-      return new Path(name, this.rootElement.getHtmlElement());
+      return createPath(name, this.rootElement.getHtmlElement());
     }
 
     return new Element();
