@@ -1,6 +1,6 @@
 import { Path2DBuilder } from '@mikeshtro/svg';
 
-import { Path } from './path';
+import { Path } from './path/path';
 
 /**
  * Renderers given path and its subpaths into a given context

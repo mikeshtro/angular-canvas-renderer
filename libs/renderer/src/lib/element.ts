@@ -1,5 +1,5 @@
 import { Comment } from './comment';
-import { Path } from './path';
+import { Path } from './path/path';
 import { Size } from './size';
 
 /**

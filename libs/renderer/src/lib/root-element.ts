@@ -2,7 +2,7 @@ import { Path2DBuilder } from '@mikeshtro/svg';
 
 import { renderPath } from './context';
 import { Element } from './element';
-import { Path } from './path';
+import { Path } from './path/path';
 
 type RootElementCursor = {
   x: number;

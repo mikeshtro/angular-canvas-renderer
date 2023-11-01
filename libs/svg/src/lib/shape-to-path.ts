@@ -1,4 +1,4 @@
-import { RectangleAttributes } from './attributes';
+import { RectangleAttributes } from './attributes/rectangle-attributes';
 import { Path2DBuilder } from './path-builder';
 
 export function rectangleToPath(

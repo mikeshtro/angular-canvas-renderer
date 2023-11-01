@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 
 import { Comment } from './comment';
-import { renderPath } from './context';
 import { Element } from './element';
-import { createPath, Path } from './path';
+import { Path } from './path/path';
+import { pathFactory } from './path/path-factory';
 import { RootElement } from './root-element';
 
 @Injectable()
@@ -65,7 +65,7 @@ export class CanvasRenderer implements Renderer2 {
 
   createElement(name: string, namespace?: string | null | undefined) {
     if (namespace === 'svg') {
-      return createPath(name, this.rootElement.getHtmlElement());
+      return pathFactory(name, this.rootElement.getHtmlElement());
     }
 
     return new Element();
